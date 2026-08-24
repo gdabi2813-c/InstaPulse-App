@@ -7,6 +7,7 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -21,6 +22,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -65,9 +67,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
@@ -94,6 +98,7 @@ private val DarkInsightCard = Color(0xFF2D1B4E)
 
 data class Reel(val title: String, val views: String, val engagement: String)
 data class NotificationItem(val icon: String, val title: String, val subtitle: String, val time: String, val color: Color)
+data class StoryHighlight(val emoji: String, val label: String, val gradient: List<Color>)
 
 @Composable
 fun InstaPulseApp() {
@@ -126,6 +131,17 @@ fun InstaPulseApp() {
             NotificationItem("🔖", "High Saves", "Reel #3 got 500+ saves today", "8h ago", Color(0xFF9C27B0)),
             NotificationItem("🤝", "Collaboration Request", "fitness_guru wants to collaborate", "12h ago", Color(0xFF00BCD4)),
             NotificationItem("🏆", "Top Creator", "You're in the top 5% of creators this week!", "1d ago", Color(0xFFFFD54F))
+        )
+    }
+
+    val highlights = remember {
+        mutableStateListOf(
+            StoryHighlight("🔥", "Trending", listOf(Color(0xFF7B2FF7), Color(0xFFE1306C))),
+            StoryHighlight("📈", "Growth", listOf(Color(0xFF2196F3), Color(0xFF00BCD4))),
+            StoryHighlight("🎯", "Goals", listOf(Color(0xFFFF9800), Color(0xFFFF5722))),
+            StoryHighlight("💡", "Tips", listOf(Color(0xFF16A34A), Color(0xFF4CAF50))),
+            StoryHighlight("🏆", "Wins", listOf(Color(0xFFFFD54F), Color(0xFFFF9800))),
+            StoryHighlight("📊", "Stats", listOf(Color(0xFF9C27B0), Color(0xFF7B2FF7)))
         )
     }
 
@@ -176,7 +192,7 @@ fun InstaPulseApp() {
                         0 -> HomeScreen(bgColor, cardColor, textColor, subTextColor, insightCardColor)
                         1 -> ReelsScreen(bgColor, cardColor, textColor, subTextColor, reels) { showAddDialog = true }
                         2 -> NotificationsScreen(bgColor, cardColor, textColor, subTextColor, notifications)
-                        3 -> ProfileScreen(bgColor, cardColor, textColor, subTextColor, isDarkMode, notifEnabled, analyticsEnabled, autoRefresh) { toggleId ->
+                        3 -> ProfileScreen(bgColor, cardColor, textColor, subTextColor, isDarkMode, notifEnabled, analyticsEnabled, autoRefresh, highlights) { toggleId ->
                             when (toggleId) { 0 -> isDarkMode = !isDarkMode; 1 -> notifEnabled = !notifEnabled; 2 -> analyticsEnabled = !analyticsEnabled; 3 -> autoRefresh = !autoRefresh }
                         }
                     }
@@ -334,44 +350,23 @@ fun SwipeableReelCard(reel: Reel, cardColor: Color, textColor: Color, subTextCol
 
     if (!isDeleted) {
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .pointerInput(Unit) {
-                    detectHorizontalDragGestures(
-                        onDragEnd = {
-                            if (offsetX < -300f) {
-                                isDeleted = true
-                                onDelete()
-                            }
-                            offsetX = 0f
-                        }
-                    ) { _, dragAmount ->
-                        if (dragAmount < 0) offsetX += dragAmount
+            modifier = Modifier.fillMaxWidth().pointerInput(Unit) {
+                detectHorizontalDragGestures(
+                    onDragEnd = {
+                        if (offsetX < -300f) { isDeleted = true; onDelete() }
+                        offsetX = 0f
                     }
-                }
+                ) { _, dragAmount -> if (dragAmount < 0) offsetX += dragAmount }
+            }
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(Color(0xFFE1306C))
-                    .padding(horizontal = 20.dp),
-                contentAlignment = Alignment.CenterEnd
-            ) {
+            Box(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Color(0xFFE1306C)).padding(horizontal = 20.dp), contentAlignment = Alignment.CenterEnd) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color.White, modifier = Modifier.size(24.dp))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Delete", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
             }
-
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .offset(x = offsetX.dp),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = cardColor)
-            ) {
+            Card(modifier = Modifier.fillMaxWidth().offset(x = offsetX.dp), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = cardColor)) {
                 Column(modifier = Modifier.padding(18.dp)) {
                     Text(reel.title, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = textColor)
                     Spacer(modifier = Modifier.height(5.dp))
@@ -408,20 +403,54 @@ fun NotificationCard(notification: NotificationItem, cardColor: Color, textColor
 }
 
 @Composable
-fun ProfileScreen(bgColor: Color, cardColor: Color, textColor: Color, subTextColor: Color, isDarkMode: Boolean, notifEnabled: Boolean, analyticsEnabled: Boolean, autoRefresh: Boolean, onToggle: (Int) -> Unit) {
+fun ProfileScreen(bgColor: Color, cardColor: Color, textColor: Color, subTextColor: Color, isDarkMode: Boolean, notifEnabled: Boolean, analyticsEnabled: Boolean, autoRefresh: Boolean, highlights: List<StoryHighlight>, onToggle: (Int) -> Unit) {
     Column(modifier = Modifier.fillMaxSize().background(bgColor).verticalScroll(rememberScrollState()).padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Spacer(modifier = Modifier.height(20.dp))
-        Text("👤", fontSize = 80.sp)
+
+        // Profile avatar with gradient ring
+        Box(modifier = Modifier.size(96.dp), contentAlignment = Alignment.Center) {
+            Box(modifier = Modifier.size(96.dp).clip(CircleShape).background(Brush.linearGradient(listOf(Color(0xFF7B2FF7), Color(0xFFE1306C), Color(0xFFFF9800)))))
+            Box(modifier = Modifier.size(88.dp).clip(CircleShape).background(cardColor), contentAlignment = Alignment.Center) {
+                Text("👤", fontSize = 48.sp)
+            }
+        }
+
         Spacer(modifier = Modifier.height(10.dp))
         Text("@gokul_creator", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = textColor)
         Spacer(modifier = Modifier.height(5.dp))
         Text("Content Creator • Motivation & Lifestyle", fontSize = 14.sp, color = subTextColor)
-        Spacer(modifier = Modifier.height(25.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) { Text("12.4K", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = textColor); Text("Followers", fontSize = 13.sp, color = subTextColor) }
             Column(horizontalAlignment = Alignment.CenterHorizontally) { Text("892", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = textColor); Text("Following", fontSize = 13.sp, color = subTextColor) }
             Column(horizontalAlignment = Alignment.CenterHorizontally) { Text("247", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = textColor); Text("Posts", fontSize = 13.sp, color = subTextColor) }
+        }
+
+        // Story Highlights
+        Spacer(modifier = Modifier.height(22.dp))
+        Text("✨ Highlights", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = textColor)
+        Spacer(modifier = Modifier.height(14.dp))
+
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            items(highlights.size) { index ->
+                val highlight = highlights[index]
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Box(
+                        modifier = Modifier
+                            .size(68.dp)
+                            .clip(CircleShape)
+                            .background(Brush.linearGradient(highlight.gradient))
+                            .border(2.dp, cardColor, CircleShape)
+                            .clickable { },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(highlight.emoji, fontSize = 28.sp)
+                    }
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(highlight.label, fontSize = 12.sp, color = subTextColor, textAlign = TextAlign.Center)
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(25.dp))
