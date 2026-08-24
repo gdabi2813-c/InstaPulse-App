@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayCircle
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -43,6 +44,8 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.darkColorScheme
@@ -96,6 +99,9 @@ fun InstaPulseApp() {
     var isDarkMode by remember { mutableStateOf(false) }
     var showSplash by remember { mutableStateOf(true) }
     var splashAlpha by remember { mutableStateOf(1f) }
+    var notifEnabled by remember { mutableStateOf(true) }
+    var analyticsEnabled by remember { mutableStateOf(true) }
+    var autoRefresh by remember { mutableStateOf(false) }
 
     val reels = remember {
         mutableStateListOf(
@@ -147,19 +153,19 @@ fun InstaPulseApp() {
                 containerColor = bgColor,
                 bottomBar = {
                     NavigationBar(containerColor = if (isDarkMode) DarkCard else Color.White) {
-                        NavigationBarItem(selected = selectedTab == 0, onClick = { selectedTab = 0 }, icon = { Icon(Icons.Default.Home, "Home", modifier = Modifier.size(26.dp)) }, label = { Text("Home") })
-                        NavigationBarItem(selected = selectedTab == 1, onClick = { selectedTab = 1 }, icon = { Icon(Icons.Default.PlayCircle, "Reels", modifier = Modifier.size(26.dp)) }, label = { Text("Reels") })
-                        NavigationBarItem(selected = selectedTab == 2, onClick = { selectedTab = 2 }, icon = { Icon(Icons.Default.Notifications, "Notifications", modifier = Modifier.size(26.dp)) }, label = { Text("Alerts") })
-                        NavigationBarItem(selected = selectedTab == 3, onClick = { selectedTab = 3 }, icon = { Icon(Icons.Default.Person, "Profile", modifier = Modifier.size(26.dp)) }, label = { Text("Profile") })
+                        NavigationBarItem(selected = selectedTab == 0, onClick = { selectedTab = 0 }, icon = { Icon(Icons.Default.Home, "Home", modifier = Modifier.size(24.dp)) }, label = { Text("Home") })
+                        NavigationBarItem(selected = selectedTab == 1, onClick = { selectedTab = 1 }, icon = { Icon(Icons.Default.PlayCircle, "Reels", modifier = Modifier.size(24.dp)) }, label = { Text("Reels") })
+                        NavigationBarItem(selected = selectedTab == 2, onClick = { selectedTab = 2 }, icon = { Icon(Icons.Default.Notifications, "Alerts", modifier = Modifier.size(24.dp)) }, label = { Text("Alerts") })
+                        NavigationBarItem(selected = selectedTab == 3, onClick = { selectedTab = 3 }, icon = { Icon(Icons.Default.Person, "Profile", modifier = Modifier.size(24.dp)) }, label = { Text("Profile") })
                     }
                 }
             ) { paddingValues ->
 
                 Column(modifier = Modifier.fillMaxSize().background(bgColor).padding(paddingValues)) {
 
-                    Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 10.dp), horizontalArrangement = Arrangement.End) {
+                    Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp), horizontalArrangement = Arrangement.End) {
                         IconButton(onClick = { isDarkMode = !isDarkMode }) {
-                            Icon(if (isDarkMode) Icons.Default.LightMode else Icons.Default.DarkMode, "Toggle", modifier = Modifier.size(28.dp), tint = if (isDarkMode) Color(0xFFFFD54F) else Color(0xFF7B2FF7))
+                            Icon(if (isDarkMode) Icons.Default.LightMode else Icons.Default.DarkMode, "Toggle", modifier = Modifier.size(26.dp), tint = if (isDarkMode) Color(0xFFFFD54F) else Color(0xFF7B2FF7))
                         }
                     }
 
@@ -167,31 +173,18 @@ fun InstaPulseApp() {
                         0 -> HomeScreen(bgColor, cardColor, textColor, subTextColor, insightCardColor)
                         1 -> ReelsScreen(bgColor, cardColor, textColor, subTextColor, reels) { showAddDialog = true }
                         2 -> NotificationsScreen(bgColor, cardColor, textColor, subTextColor, notifications)
-                        3 -> ProfileScreen(bgColor, cardColor, textColor, subTextColor)
+                        3 -> ProfileScreen(bgColor, cardColor, textColor, subTextColor, isDarkMode, notifEnabled, analyticsEnabled, autoRefresh) { isDarkMode = !isDarkMode; notifEnabled = !notifEnabled; analyticsEnabled = !analyticsEnabled; autoRefresh = !autoRefresh }
                     }
                 }
             }
         }
 
         if (showAddDialog) {
-            AddReelDialog(
-                cardColor = cardColor,
-                textColor = textColor,
-                subTextColor = subTextColor,
-                onDismiss = { showAddDialog = false },
-                onAdd = { title, views, engagement ->
-                    reels.add(0, Reel(title, views, engagement))
-                    showAddDialog = false
-                }
-            )
+            AddReelDialog(cardColor, textColor, subTextColor, { showAddDialog = false }, { title, views, engagement -> reels.add(0, Reel(title, views, engagement)); showAddDialog = false })
         }
 
         if (showSplash) {
-            Column(
-                modifier = Modifier.fillMaxSize().background(Color(0xFF7B2FF7)).alpha(animatedAlpha).scale(scale),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
+            Column(modifier = Modifier.fillMaxSize().background(Color(0xFF7B2FF7)).alpha(animatedAlpha).scale(scale), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
                 Text("📊", fontSize = 80.sp)
                 Spacer(modifier = Modifier.height(20.dp))
                 Text("InstaPulse", fontSize = 42.sp, fontWeight = FontWeight.Bold, color = Color.White)
@@ -206,7 +199,6 @@ fun InstaPulseApp() {
 
 @Composable
 fun AddReelDialog(cardColor: Color, textColor: Color, subTextColor: Color, onDismiss: () -> Unit, onAdd: (String, String, String) -> Unit) {
-
     var title by remember { mutableStateOf("") }
     var views by remember { mutableStateOf("") }
     var likes by remember { mutableStateOf("") }
@@ -225,22 +217,9 @@ fun AddReelDialog(cardColor: Color, textColor: Color, subTextColor: Color, onDis
             }
         },
         confirmButton = {
-            Button(
-                onClick = {
-                    if (title.isNotBlank() && views.isNotBlank() && likes.isNotBlank()) {
-                        onAdd(title, "$views Views", "❤️ $likes   💬 0")
-                    }
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7B2FF7))
-            ) {
-                Text("Add Reel", color = Color.White)
-            }
+            Button(onClick = { if (title.isNotBlank() && views.isNotBlank() && likes.isNotBlank()) { onAdd(title, "$views Views", "❤️ $likes   💬 0") } }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7B2FF7))) { Text("Add Reel", color = Color.White) }
         },
-        dismissButton = {
-            TextButton(onClick = { onDismiss() }) {
-                Text("Cancel", color = subTextColor)
-            }
-        }
+        dismissButton = { TextButton(onClick = { onDismiss() }) { Text("Cancel", color = subTextColor) } }
     )
 }
 
@@ -249,15 +228,9 @@ fun HomeScreen(bgColor: Color, cardColor: Color, textColor: Color, subTextColor:
     var expandedCard by remember { mutableIntStateOf(-1) }
     var chartAnimationPlayed by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        delay(500)
-        chartAnimationPlayed = true
-    }
+    LaunchedEffect(Unit) { delay(500); chartAnimationPlayed = true }
 
-    val weekData = listOf(
-        "Mon" to 120f, "Tue" to 180f, "Wed" to 90f, "Thu" to 250f,
-        "Fri" to 310f, "Sat" to 280f, "Sun" to 200f
-    )
+    val weekData = listOf("Mon" to 120f, "Tue" to 180f, "Wed" to 90f, "Thu" to 250f, "Fri" to 310f, "Sat" to 280f, "Sun" to 200f)
 
     Column(modifier = Modifier.fillMaxSize().background(bgColor).verticalScroll(rememberScrollState()).padding(20.dp)) {
         Text("InstaPulse", fontSize = 30.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7B2FF7))
@@ -281,11 +254,7 @@ fun HomeScreen(bgColor: Color, cardColor: Color, textColor: Color, subTextColor:
                     weekData.forEachIndexed { index, (day, value) ->
                         val maxValue = weekData.maxOf { it.second }
                         val targetHeight = (value / maxValue) * 140f
-                        val animatedHeight by animateFloatAsState(
-                            targetValue = if (chartAnimationPlayed) targetHeight else 0f,
-                            animationSpec = tween(durationMillis = 800, delayMillis = index * 80),
-                            label = "bar_$index"
-                        )
+                        val animatedHeight by animateFloatAsState(targetValue = if (chartAnimationPlayed) targetHeight else 0f, animationSpec = tween(durationMillis = 800, delayMillis = index * 80), label = "bar_$index")
                         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Bottom) {
                             Text("${value.toInt()}", fontSize = 10.sp, color = subTextColor, fontWeight = FontWeight.Medium)
                             Spacer(modifier = Modifier.height(4.dp))
@@ -296,9 +265,7 @@ fun HomeScreen(bgColor: Color, cardColor: Color, textColor: Color, subTextColor:
                     }
                 }
                 Spacer(modifier = Modifier.height(10.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                    Text("🔥 Best day: Friday — 310 new followers!", fontSize = 13.sp, color = Color(0xFF16A34A), fontWeight = FontWeight.Medium)
-                }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) { Text("🔥 Best day: Friday — 310 new followers!", fontSize = 13.sp, color = Color(0xFF16A34A), fontWeight = FontWeight.Medium) }
             }
         }
 
@@ -330,23 +297,10 @@ fun ExpandableStatCard(title: String, value: String, growth: String, isExpanded:
     Card(modifier = Modifier.fillMaxWidth().clickable { onClick() }.animateContentSize(), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = cardColor)) {
         Column(modifier = Modifier.padding(18.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Column {
-                    Text(title, fontSize = 14.sp, color = subTextColor)
-                    Spacer(modifier = Modifier.height(5.dp))
-                    Text(value, fontSize = 27.sp, fontWeight = FontWeight.Bold, color = textColor)
-                    Text("↑ $growth", fontSize = 13.sp, color = Color(0xFF16A34A))
-                }
+                Column { Text(title, fontSize = 14.sp, color = subTextColor); Spacer(modifier = Modifier.height(5.dp)); Text(value, fontSize = 27.sp, fontWeight = FontWeight.Bold, color = textColor); Text("↑ $growth", fontSize = 13.sp, color = Color(0xFF16A34A)) }
                 Text(if (isExpanded) "▲" else "▼", fontSize = 20.sp, color = subTextColor)
             }
-            if (isExpanded) {
-                Spacer(modifier = Modifier.height(15.dp))
-                details.forEach { (label, val_) ->
-                    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text(label, fontSize = 14.sp, color = subTextColor)
-                        Text(val_, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = textColor)
-                    }
-                }
-            }
+            if (isExpanded) { Spacer(modifier = Modifier.height(15.dp)); details.forEach { (label, val_) -> Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) { Text(label, fontSize = 14.sp, color = subTextColor); Text(val_, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = textColor) } } }
         }
     }
 }
@@ -356,30 +310,17 @@ fun ReelsScreen(bgColor: Color, cardColor: Color, textColor: Color, subTextColor
     Column(modifier = Modifier.fillMaxSize().background(bgColor).verticalScroll(rememberScrollState()).padding(20.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Text("📱 Your Reels", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = textColor)
-            Button(onClick = { onAddClick() }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7B2FF7)), shape = RoundedCornerShape(12.dp)) {
-                Icon(Icons.Default.Add, contentDescription = "Add", modifier = Modifier.size(20.dp), tint = Color.White)
-                Spacer(modifier = Modifier.size(4.dp))
-                Text("Add Reel", color = Color.White)
-            }
+            Button(onClick = { onAddClick() }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7B2FF7)), shape = RoundedCornerShape(12.dp)) { Icon(Icons.Default.Add, contentDescription = "Add", modifier = Modifier.size(20.dp), tint = Color.White); Spacer(modifier = Modifier.size(4.dp)); Text("Add Reel", color = Color.White) }
         }
         Spacer(modifier = Modifier.height(20.dp))
-        reels.forEach { reel ->
-            ReelCard(reel.title, reel.views, reel.engagement, cardColor, textColor, subTextColor)
-            Spacer(modifier = Modifier.height(12.dp))
-        }
+        reels.forEach { reel -> ReelCard(reel.title, reel.views, reel.engagement, cardColor, textColor, subTextColor); Spacer(modifier = Modifier.height(12.dp)) }
     }
 }
 
 @Composable
 fun ReelCard(title: String, views: String, engagement: String, cardColor: Color, textColor: Color, subTextColor: Color) {
     Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = cardColor)) {
-        Column(modifier = Modifier.padding(18.dp)) {
-            Text(title, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = textColor)
-            Spacer(modifier = Modifier.height(5.dp))
-            Text(views, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7B2FF7))
-            Spacer(modifier = Modifier.height(5.dp))
-            Text(engagement, fontSize = 14.sp, color = subTextColor)
-        }
+        Column(modifier = Modifier.padding(18.dp)) { Text(title, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = textColor); Spacer(modifier = Modifier.height(5.dp)); Text(views, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7B2FF7)); Spacer(modifier = Modifier.height(5.dp)); Text(engagement, fontSize = 14.sp, color = subTextColor) }
     }
 }
 
@@ -390,44 +331,24 @@ fun NotificationsScreen(bgColor: Color, cardColor: Color, textColor: Color, subT
         Spacer(modifier = Modifier.height(5.dp))
         Text("Stay updated with your latest activity", fontSize = 14.sp, color = subTextColor)
         Spacer(modifier = Modifier.height(20.dp))
-
-        notifications.forEach { notification ->
-            NotificationCard(notification, cardColor, textColor, subTextColor)
-            Spacer(modifier = Modifier.height(10.dp))
-        }
+        notifications.forEach { notification -> NotificationCard(notification, cardColor, textColor, subTextColor); Spacer(modifier = Modifier.height(10.dp)) }
     }
 }
 
 @Composable
 fun NotificationCard(notification: NotificationItem, cardColor: Color, textColor: Color, subTextColor: Color) {
-    Card(
-        modifier = Modifier.fillMaxWidth().clickable { },
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = cardColor)
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier.size(46.dp).clip(CircleShape).background(notification.color.copy(alpha = 0.15f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(notification.icon, fontSize = 22.sp)
-            }
+    Card(modifier = Modifier.fillMaxWidth().clickable { }, shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = cardColor)) {
+        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(modifier = Modifier.size(46.dp).clip(CircleShape).background(notification.color.copy(alpha = 0.15f)), contentAlignment = Alignment.Center) { Text(notification.icon, fontSize = 22.sp) }
             Spacer(modifier = Modifier.width(14.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(notification.title, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = textColor)
-                Spacer(modifier = Modifier.height(3.dp))
-                Text(notification.subtitle, fontSize = 13.sp, color = subTextColor)
-            }
+            Column(modifier = Modifier.weight(1f)) { Text(notification.title, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = textColor); Spacer(modifier = Modifier.height(3.dp)); Text(notification.subtitle, fontSize = 13.sp, color = subTextColor) }
             Text(notification.time, fontSize = 11.sp, color = subTextColor)
         }
     }
 }
 
 @Composable
-fun ProfileScreen(bgColor: Color, cardColor: Color, textColor: Color, subTextColor: Color) {
+fun ProfileScreen(bgColor: Color, cardColor: Color, textColor: Color, subTextColor: Color, isDarkMode: Boolean, notifEnabled: Boolean, analyticsEnabled: Boolean, autoRefresh: Boolean, onToggle: (Int) -> Unit) {
     Column(modifier = Modifier.fillMaxSize().background(bgColor).verticalScroll(rememberScrollState()).padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Spacer(modifier = Modifier.height(20.dp))
         Text("👤", fontSize = 80.sp)
@@ -449,6 +370,72 @@ fun ProfileScreen(bgColor: Color, cardColor: Color, textColor: Color, subTextCol
         StatCard("Total Posts", "247", "+12 this month", cardColor, textColor, subTextColor)
         Spacer(modifier = Modifier.height(12.dp))
         StatCard("Avg. Reach per Reel", "89K", "+15% this month", cardColor, textColor, subTextColor)
+
+        Spacer(modifier = Modifier.height(25.dp))
+        Text("⚙️ Settings", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = textColor)
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = cardColor)) {
+            Column(modifier = Modifier.padding(18.dp)) {
+                SettingRow("🔔", "Notifications", "Get alerts for new followers, likes & comments", notifEnabled) { onToggle(1) }
+                Spacer(modifier = Modifier.height(16.dp))
+                SettingRow("🌙", "Dark Mode", "Switch between light and dark theme", isDarkMode) { onToggle(0) }
+                Spacer(modifier = Modifier.height(16.dp))
+                SettingRow("📊", "Analytics Tracking", "Track your growth and engagement metrics", analyticsEnabled) { onToggle(2) }
+                Spacer(modifier = Modifier.height(16.dp))
+                SettingRow("🔄", "Auto Refresh", "Automatically refresh data every 5 minutes", autoRefresh) { onToggle(3) }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = cardColor)) {
+            Column(modifier = Modifier.padding(18.dp)) {
+                Text("ℹ️ About", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = textColor)
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("InstaPulse v1.0", fontSize = 13.sp, color = subTextColor)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("Your Instagram Growth Hub — track followers, reach, engagement & reels all in one place.", fontSize = 13.sp, color = subTextColor)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("Made with ❤️ by @gokul_creator", fontSize = 13.sp, color = subTextColor)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = { },
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE1306C)),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Text("🚪 Logout", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 4.dp))
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+    }
+}
+
+@Composable
+fun SettingRow(icon: String, title: String, subtitle: String, checked: Boolean, onToggle: () -> Unit) {
+    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(icon, fontSize = 24.sp)
+        Spacer(modifier = Modifier.width(14.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.Black.copy(alpha = if (checked) 1f else 0.7f))
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(subtitle, fontSize = 12.sp, color = Color.Gray)
+        }
+        Switch(
+            checked = checked,
+            onCheckedChange = { onToggle() },
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = Color.White,
+                checkedTrackColor = Color(0xFF7B2FF7),
+                uncheckedThumbColor = Color.Gray,
+                uncheckedTrackColor = Color.Gray.copy(alpha = 0.3f)
+            )
+        )
     }
 }
 
