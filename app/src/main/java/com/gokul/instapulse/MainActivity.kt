@@ -13,11 +13,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -55,9 +57,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
@@ -92,7 +96,6 @@ fun InstaPulseApp() {
     var showSplash by remember { mutableStateOf(true) }
     var splashAlpha by remember { mutableStateOf(1f) }
 
-    // Reels list — dynamic, add ho sakti hai
     val reels = remember {
         mutableStateListOf(
             Reel("Reel #1", "1.2M Views", "❤️ 84K   💬 3.2K"),
@@ -154,7 +157,6 @@ fun InstaPulseApp() {
             }
         }
 
-        // Add New Reel Dialog
         if (showAddDialog) {
             AddReelDialog(
                 cardColor = cardColor,
@@ -168,7 +170,6 @@ fun InstaPulseApp() {
             )
         }
 
-        // Splash Screen
         if (showSplash) {
             Column(
                 modifier = Modifier.fillMaxSize().background(Color(0xFF7B2FF7)).alpha(animatedAlpha).scale(scale),
@@ -200,29 +201,11 @@ fun AddReelDialog(cardColor: Color, textColor: Color, subTextColor: Color, onDis
         title = { Text("➕ Add New Reel", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = textColor) },
         text = {
             Column {
-                OutlinedTextField(
-                    value = title,
-                    onValueChange = { title = it },
-                    label = { Text("Reel Title") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("Reel Title") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                 Spacer(modifier = Modifier.height(10.dp))
-                OutlinedTextField(
-                    value = views,
-                    onValueChange = { views = it },
-                    label = { Text("Views (e.g. 500K)") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                OutlinedTextField(value = views, onValueChange = { views = it }, label = { Text("Views (e.g. 500K)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                 Spacer(modifier = Modifier.height(10.dp))
-                OutlinedTextField(
-                    value = likes,
-                    onValueChange = { likes = it },
-                    label = { Text("Likes (e.g. 30K)") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                OutlinedTextField(value = likes, onValueChange = { likes = it }, label = { Text("Likes (e.g. 30K)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
             }
         },
         confirmButton = {
@@ -248,6 +231,22 @@ fun AddReelDialog(cardColor: Color, textColor: Color, subTextColor: Color, onDis
 @Composable
 fun HomeScreen(bgColor: Color, cardColor: Color, textColor: Color, subTextColor: Color, insightCardColor: Color) {
     var expandedCard by remember { mutableIntStateOf(-1) }
+    var chartAnimationPlayed by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        delay(500)
+        chartAnimationPlayed = true
+    }
+
+    val weekData = listOf(
+        "Mon" to 120f,
+        "Tue" to 180f,
+        "Wed" to 90f,
+        "Thu" to 250f,
+        "Fri" to 310f,
+        "Sat" to 280f,
+        "Sun" to 200f
+    )
 
     Column(modifier = Modifier.fillMaxSize().background(bgColor).verticalScroll(rememberScrollState()).padding(20.dp)) {
         Text("InstaPulse", fontSize = 30.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7B2FF7))
@@ -261,6 +260,56 @@ fun HomeScreen(bgColor: Color, cardColor: Color, textColor: Color, subTextColor:
         ExpandableStatCard("Reach", "284K", "+18% this week", expandedCard == 1, { expandedCard = if (expandedCard == 1) -1 else 1 }, cardColor, textColor, subTextColor, listOf("From Home" to "142K", "From Explore" to "89K", "From Hashtags" to "38K", "From Profile" to "15K"))
         Spacer(modifier = Modifier.height(12.dp))
         ExpandableStatCard("Engagement", "7.82%", "+12.5% this week", expandedCard == 2, { expandedCard = if (expandedCard == 2) -1 else 2 }, cardColor, textColor, subTextColor, listOf("Likes" to "21.4K", "Comments" to "2.1K", "Shares" to "4.8K", "Saves" to "3.2K"))
+        Spacer(modifier = Modifier.height(22.dp))
+
+        // 📊 Weekly Growth Chart
+        Text("📊 Weekly Followers Growth", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = textColor)
+        Spacer(modifier = Modifier.height(12.dp))
+        Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = cardColor)) {
+            Column(modifier = Modifier.padding(18.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().height(160.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    weekData.forEachIndexed { index, (day, value) ->
+                        val maxValue = weekData.maxOf { it.second }
+                        val targetHeight = (value / maxValue) * 140f
+                        val animatedHeight by animateFloatAsState(
+                            targetValue = if (chartAnimationPlayed) targetHeight else 0f,
+                            animationSpec = tween(durationMillis = 800, delayMillis = index * 80),
+                            label = "bar_$index"
+                        )
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Bottom) {
+                            Text(
+                                "${value.toInt()}",
+                                fontSize = 10.sp,
+                                color = subTextColor,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Box(
+                                modifier = Modifier
+                                    .width(28.dp)
+                                    .height(animatedHeight.dp)
+                                    .clip(RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp))
+                                    .background(
+                                        if (value == maxValue) Color(0xFF7B2FF7)
+                                        else Color(0xFF7B2FF7).copy(alpha = 0.5f)
+                                    )
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(day, fontSize = 11.sp, color = subTextColor)
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(10.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                    Text("🔥 Best day: Friday — 310 new followers!", fontSize = 13.sp, color = Color(0xFF16A34A), fontWeight = FontWeight.Medium)
+                }
+            }
+        }
+
         Spacer(modifier = Modifier.height(22.dp))
 
         Text("🤖 AI Growth Insight", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = textColor)
