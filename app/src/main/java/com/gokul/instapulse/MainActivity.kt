@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -21,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material3.AlertDialog
@@ -61,7 +62,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
@@ -87,6 +87,7 @@ private val DarkSubText = Color(0xFFAAAAAA)
 private val DarkInsightCard = Color(0xFF2D1B4E)
 
 data class Reel(val title: String, val views: String, val engagement: String)
+data class NotificationItem(val icon: String, val title: String, val subtitle: String, val time: String, val color: Color)
 
 @Composable
 fun InstaPulseApp() {
@@ -103,6 +104,19 @@ fun InstaPulseApp() {
             Reel("Reel #3", "620K Views", "❤️ 38K   💬 950"),
             Reel("Reel #4", "430K Views", "❤️ 27K   💬 620"),
             Reel("Reel #5", "310K Views", "❤️ 19K   💬 410")
+        )
+    }
+
+    val notifications = remember {
+        mutableStateListOf(
+            NotificationItem("🎉", "Milestone Reached!", "You hit 12K followers", "2m ago", Color(0xFF7B2FF7)),
+            NotificationItem("❤️", "Reel #1 is trending", "84K likes and counting!", "15m ago", Color(0xFFE1306C)),
+            NotificationItem("👤", "New Follower", "rahul_creative started following you", "1h ago", Color(0xFF16A34A)),
+            NotificationItem("💬", "New Comment", "priya_motivation commented on your Reel #2", "3h ago", Color(0xFF2196F3)),
+            NotificationItem("📈", "Reach Boost", "Your reach increased by 18% this week", "5h ago", Color(0xFFFF9800)),
+            NotificationItem("🔖", "High Saves", "Reel #3 got 500+ saves today", "8h ago", Color(0xFF9C27B0)),
+            NotificationItem("🤝", "Collaboration Request", "fitness_guru wants to collaborate", "12h ago", Color(0xFF00BCD4)),
+            NotificationItem("🏆", "Top Creator", "You're in the top 5% of creators this week!", "1d ago", Color(0xFFFFD54F))
         )
     }
 
@@ -135,7 +149,8 @@ fun InstaPulseApp() {
                     NavigationBar(containerColor = if (isDarkMode) DarkCard else Color.White) {
                         NavigationBarItem(selected = selectedTab == 0, onClick = { selectedTab = 0 }, icon = { Icon(Icons.Default.Home, "Home", modifier = Modifier.size(26.dp)) }, label = { Text("Home") })
                         NavigationBarItem(selected = selectedTab == 1, onClick = { selectedTab = 1 }, icon = { Icon(Icons.Default.PlayCircle, "Reels", modifier = Modifier.size(26.dp)) }, label = { Text("Reels") })
-                        NavigationBarItem(selected = selectedTab == 2, onClick = { selectedTab = 2 }, icon = { Icon(Icons.Default.Person, "Profile", modifier = Modifier.size(26.dp)) }, label = { Text("Profile") })
+                        NavigationBarItem(selected = selectedTab == 2, onClick = { selectedTab = 2 }, icon = { Icon(Icons.Default.Notifications, "Notifications", modifier = Modifier.size(26.dp)) }, label = { Text("Alerts") })
+                        NavigationBarItem(selected = selectedTab == 3, onClick = { selectedTab = 3 }, icon = { Icon(Icons.Default.Person, "Profile", modifier = Modifier.size(26.dp)) }, label = { Text("Profile") })
                     }
                 }
             ) { paddingValues ->
@@ -151,7 +166,8 @@ fun InstaPulseApp() {
                     when (selectedTab) {
                         0 -> HomeScreen(bgColor, cardColor, textColor, subTextColor, insightCardColor)
                         1 -> ReelsScreen(bgColor, cardColor, textColor, subTextColor, reels) { showAddDialog = true }
-                        2 -> ProfileScreen(bgColor, cardColor, textColor, subTextColor)
+                        2 -> NotificationsScreen(bgColor, cardColor, textColor, subTextColor, notifications)
+                        3 -> ProfileScreen(bgColor, cardColor, textColor, subTextColor)
                     }
                 }
             }
@@ -239,13 +255,8 @@ fun HomeScreen(bgColor: Color, cardColor: Color, textColor: Color, subTextColor:
     }
 
     val weekData = listOf(
-        "Mon" to 120f,
-        "Tue" to 180f,
-        "Wed" to 90f,
-        "Thu" to 250f,
-        "Fri" to 310f,
-        "Sat" to 280f,
-        "Sun" to 200f
+        "Mon" to 120f, "Tue" to 180f, "Wed" to 90f, "Thu" to 250f,
+        "Fri" to 310f, "Sat" to 280f, "Sun" to 200f
     )
 
     Column(modifier = Modifier.fillMaxSize().background(bgColor).verticalScroll(rememberScrollState()).padding(20.dp)) {
@@ -262,16 +273,11 @@ fun HomeScreen(bgColor: Color, cardColor: Color, textColor: Color, subTextColor:
         ExpandableStatCard("Engagement", "7.82%", "+12.5% this week", expandedCard == 2, { expandedCard = if (expandedCard == 2) -1 else 2 }, cardColor, textColor, subTextColor, listOf("Likes" to "21.4K", "Comments" to "2.1K", "Shares" to "4.8K", "Saves" to "3.2K"))
         Spacer(modifier = Modifier.height(22.dp))
 
-        // 📊 Weekly Growth Chart
         Text("📊 Weekly Followers Growth", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = textColor)
         Spacer(modifier = Modifier.height(12.dp))
         Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = cardColor)) {
             Column(modifier = Modifier.padding(18.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().height(160.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.Bottom
-                ) {
+                Row(modifier = Modifier.fillMaxWidth().height(160.dp), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.Bottom) {
                     weekData.forEachIndexed { index, (day, value) ->
                         val maxValue = weekData.maxOf { it.second }
                         val targetHeight = (value / maxValue) * 140f
@@ -281,23 +287,9 @@ fun HomeScreen(bgColor: Color, cardColor: Color, textColor: Color, subTextColor:
                             label = "bar_$index"
                         )
                         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Bottom) {
-                            Text(
-                                "${value.toInt()}",
-                                fontSize = 10.sp,
-                                color = subTextColor,
-                                fontWeight = FontWeight.Medium
-                            )
+                            Text("${value.toInt()}", fontSize = 10.sp, color = subTextColor, fontWeight = FontWeight.Medium)
                             Spacer(modifier = Modifier.height(4.dp))
-                            Box(
-                                modifier = Modifier
-                                    .width(28.dp)
-                                    .height(animatedHeight.dp)
-                                    .clip(RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp))
-                                    .background(
-                                        if (value == maxValue) Color(0xFF7B2FF7)
-                                        else Color(0xFF7B2FF7).copy(alpha = 0.5f)
-                                    )
-                            )
+                            Box(modifier = Modifier.width(28.dp).height(animatedHeight.dp).clip(RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp)).background(if (value == maxValue) Color(0xFF7B2FF7) else Color(0xFF7B2FF7).copy(alpha = 0.5f)))
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(day, fontSize = 11.sp, color = subTextColor)
                         }
@@ -311,7 +303,6 @@ fun HomeScreen(bgColor: Color, cardColor: Color, textColor: Color, subTextColor:
         }
 
         Spacer(modifier = Modifier.height(22.dp))
-
         Text("🤖 AI Growth Insight", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = textColor)
         Spacer(modifier = Modifier.height(10.dp))
         Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = insightCardColor)) {
@@ -363,22 +354,15 @@ fun ExpandableStatCard(title: String, value: String, growth: String, isExpanded:
 @Composable
 fun ReelsScreen(bgColor: Color, cardColor: Color, textColor: Color, subTextColor: Color, reels: List<Reel>, onAddClick: () -> Unit) {
     Column(modifier = Modifier.fillMaxSize().background(bgColor).verticalScroll(rememberScrollState()).padding(20.dp)) {
-
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Text("📱 Your Reels", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = textColor)
-            Button(
-                onClick = { onAddClick() },
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7B2FF7)),
-                shape = RoundedCornerShape(12.dp)
-            ) {
+            Button(onClick = { onAddClick() }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7B2FF7)), shape = RoundedCornerShape(12.dp)) {
                 Icon(Icons.Default.Add, contentDescription = "Add", modifier = Modifier.size(20.dp), tint = Color.White)
                 Spacer(modifier = Modifier.size(4.dp))
                 Text("Add Reel", color = Color.White)
             }
         }
-
         Spacer(modifier = Modifier.height(20.dp))
-
         reels.forEach { reel ->
             ReelCard(reel.title, reel.views, reel.engagement, cardColor, textColor, subTextColor)
             Spacer(modifier = Modifier.height(12.dp))
@@ -395,6 +379,49 @@ fun ReelCard(title: String, views: String, engagement: String, cardColor: Color,
             Text(views, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7B2FF7))
             Spacer(modifier = Modifier.height(5.dp))
             Text(engagement, fontSize = 14.sp, color = subTextColor)
+        }
+    }
+}
+
+@Composable
+fun NotificationsScreen(bgColor: Color, cardColor: Color, textColor: Color, subTextColor: Color, notifications: List<NotificationItem>) {
+    Column(modifier = Modifier.fillMaxSize().background(bgColor).verticalScroll(rememberScrollState()).padding(20.dp)) {
+        Text("🔔 Notifications", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = textColor)
+        Spacer(modifier = Modifier.height(5.dp))
+        Text("Stay updated with your latest activity", fontSize = 14.sp, color = subTextColor)
+        Spacer(modifier = Modifier.height(20.dp))
+
+        notifications.forEach { notification ->
+            NotificationCard(notification, cardColor, textColor, subTextColor)
+            Spacer(modifier = Modifier.height(10.dp))
+        }
+    }
+}
+
+@Composable
+fun NotificationCard(notification: NotificationItem, cardColor: Color, textColor: Color, subTextColor: Color) {
+    Card(
+        modifier = Modifier.fillMaxWidth().clickable { },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = cardColor)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier.size(46.dp).clip(CircleShape).background(notification.color.copy(alpha = 0.15f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(notification.icon, fontSize = 22.sp)
+            }
+            Spacer(modifier = Modifier.width(14.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(notification.title, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = textColor)
+                Spacer(modifier = Modifier.height(3.dp))
+                Text(notification.subtitle, fontSize = 13.sp, color = subTextColor)
+            }
+            Text(notification.time, fontSize = 11.sp, color = subTextColor)
         }
     }
 }
