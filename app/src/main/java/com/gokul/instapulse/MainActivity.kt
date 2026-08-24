@@ -29,6 +29,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Home
@@ -36,6 +37,7 @@ import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayCircle
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -52,6 +54,8 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
@@ -113,11 +117,11 @@ fun InstaPulseApp() {
 
     val reels = remember {
         mutableStateListOf(
-            Reel("Reel #1", "1.2M Views", "❤️ 84K   💬 3.2K"),
-            Reel("Reel #2", "845K Views", "❤️ 52K   💬 1.8K"),
-            Reel("Reel #3", "620K Views", "❤️ 38K   💬 950"),
-            Reel("Reel #4", "430K Views", "❤️ 27K   💬 620"),
-            Reel("Reel #5", "310K Views", "❤️ 19K   💬 410")
+            Reel("Reel #1 - Motivation", "1.2M Views", "❤️ 84K   💬 3.2K"),
+            Reel("Reel #2 - Fitness Tips", "845K Views", "❤️ 52K   💬 1.8K"),
+            Reel("Reel #3 - Morning Routine", "620K Views", "❤️ 38K   💬 950"),
+            Reel("Reel #4 - Success Story", "430K Views", "❤️ 27K   💬 620"),
+            Reel("Reel #5 - Mindset Hack", "310K Views", "❤️ 19K   💬 410")
         )
     }
 
@@ -328,53 +332,76 @@ fun ExpandableStatCard(title: String, value: String, growth: String, isExpanded:
 
 @Composable
 fun ReelsScreen(bgColor: Color, cardColor: Color, textColor: Color, subTextColor: Color, reels: MutableList<Reel>, onAddClick: () -> Unit) {
+    var searchQuery by remember { mutableStateOf("") }
+
+    val filteredReels = if (searchQuery.isBlank()) reels else reels.filter { it.title.contains(searchQuery, ignoreCase = true) }
+
     Column(modifier = Modifier.fillMaxSize().background(bgColor).verticalScroll(rememberScrollState()).padding(20.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Text("📱 Your Reels", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = textColor)
             Button(onClick = { onAddClick() }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7B2FF7)), shape = RoundedCornerShape(12.dp)) { Icon(Icons.Default.Add, contentDescription = "Add", modifier = Modifier.size(20.dp), tint = Color.White); Spacer(modifier = Modifier.size(4.dp)); Text("Add Reel", color = Color.White) }
         }
-        Spacer(modifier = Modifier.height(8.dp))
-        Text("💡 Swipe left on any reel to delete", fontSize = 12.sp, color = subTextColor)
         Spacer(modifier = Modifier.height(16.dp))
-        reels.forEachIndexed { index, reel ->
-            SwipeableReelCard(reel, cardColor, textColor, subTextColor) { reels.removeAt(index) }
-            Spacer(modifier = Modifier.height(12.dp))
+
+        // 🔍 Search Bar
+        TextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text("🔍 Search reels...", fontSize = 14.sp, color = subTextColor) },
+            singleLine = true,
+            shape = RoundedCornerShape(16.dp),
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = cardColor,
+                unfocusedContainerColor = cardColor,
+                focusedIndicatorColor = Color(0xFF7B2FF7),
+                unfocusedIndicatorColor = Color.Transparent,
+                cursorColor = Color(0xFF7B2FF7),
+                focusedTextColor = textColor,
+                unfocusedTextColor = textColor
+            ),
+            trailingIcon = {
+                if (searchQuery.isNotBlank()) {
+                    IconButton(onClick = { searchQuery = "" }) {
+                        Icon(Icons.Default.Clear, contentDescription = "Clear", tint = subTextColor, modifier = Modifier.size(20.dp))
+                    }
+                }
+            }
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            if (searchQuery.isBlank()) "💡 Swipe left on any reel to delete"
+            else "🔎 ${filteredReels.size} reel${if (filteredReels.size != 1) "s" else ""} found",
+            fontSize = 12.sp, color = subTextColor
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        if (filteredReels.isEmpty()) {
+            Spacer(modifier = Modifier.height(60.dp))
+            Text("🔍", fontSize = 60.sp, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+            Spacer(modifier = Modifier.height(16.dp))
+            Text("No reels found", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = textColor, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text("Try a different search", fontSize = 14.sp, color = subTextColor, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+        } else {
+            filteredReels.forEach { reel ->
+                ReelCard(reel.title, reel.views, reel.engagement, cardColor, textColor, subTextColor)
+                Spacer(modifier = Modifier.height(12.dp))
+            }
         }
     }
 }
 
 @Composable
-fun SwipeableReelCard(reel: Reel, cardColor: Color, textColor: Color, subTextColor: Color, onDelete: () -> Unit) {
-    var offsetX by remember { mutableStateOf(0f) }
-    var isDeleted by remember { mutableStateOf(false) }
-
-    if (!isDeleted) {
-        Box(
-            modifier = Modifier.fillMaxWidth().pointerInput(Unit) {
-                detectHorizontalDragGestures(
-                    onDragEnd = {
-                        if (offsetX < -300f) { isDeleted = true; onDelete() }
-                        offsetX = 0f
-                    }
-                ) { _, dragAmount -> if (dragAmount < 0) offsetX += dragAmount }
-            }
-        ) {
-            Box(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Color(0xFFE1306C)).padding(horizontal = 20.dp), contentAlignment = Alignment.CenterEnd) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color.White, modifier = Modifier.size(24.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Delete", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                }
-            }
-            Card(modifier = Modifier.fillMaxWidth().offset(x = offsetX.dp), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = cardColor)) {
-                Column(modifier = Modifier.padding(18.dp)) {
-                    Text(reel.title, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = textColor)
-                    Spacer(modifier = Modifier.height(5.dp))
-                    Text(reel.views, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7B2FF7))
-                    Spacer(modifier = Modifier.height(5.dp))
-                    Text(reel.engagement, fontSize = 14.sp, color = subTextColor)
-                }
-            }
+fun ReelCard(title: String, views: String, engagement: String, cardColor: Color, textColor: Color, subTextColor: Color) {
+    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = cardColor)) {
+        Column(modifier = Modifier.padding(18.dp)) {
+            Text(title, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = textColor)
+            Spacer(modifier = Modifier.height(5.dp))
+            Text(views, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7B2FF7))
+            Spacer(modifier = Modifier.height(5.dp))
+            Text(engagement, fontSize = 14.sp, color = subTextColor)
         }
     }
 }
@@ -407,12 +434,9 @@ fun ProfileScreen(bgColor: Color, cardColor: Color, textColor: Color, subTextCol
     Column(modifier = Modifier.fillMaxSize().background(bgColor).verticalScroll(rememberScrollState()).padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Spacer(modifier = Modifier.height(20.dp))
 
-        // Profile avatar with gradient ring
         Box(modifier = Modifier.size(96.dp), contentAlignment = Alignment.Center) {
             Box(modifier = Modifier.size(96.dp).clip(CircleShape).background(Brush.linearGradient(listOf(Color(0xFF7B2FF7), Color(0xFFE1306C), Color(0xFFFF9800)))))
-            Box(modifier = Modifier.size(88.dp).clip(CircleShape).background(cardColor), contentAlignment = Alignment.Center) {
-                Text("👤", fontSize = 48.sp)
-            }
+            Box(modifier = Modifier.size(88.dp).clip(CircleShape).background(cardColor), contentAlignment = Alignment.Center) { Text("👤", fontSize = 48.sp) }
         }
 
         Spacer(modifier = Modifier.height(10.dp))
@@ -427,7 +451,6 @@ fun ProfileScreen(bgColor: Color, cardColor: Color, textColor: Color, subTextCol
             Column(horizontalAlignment = Alignment.CenterHorizontally) { Text("247", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = textColor); Text("Posts", fontSize = 13.sp, color = subTextColor) }
         }
 
-        // Story Highlights
         Spacer(modifier = Modifier.height(22.dp))
         Text("✨ Highlights", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = textColor)
         Spacer(modifier = Modifier.height(14.dp))
@@ -436,17 +459,7 @@ fun ProfileScreen(bgColor: Color, cardColor: Color, textColor: Color, subTextCol
             items(highlights.size) { index ->
                 val highlight = highlights[index]
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Box(
-                        modifier = Modifier
-                            .size(68.dp)
-                            .clip(CircleShape)
-                            .background(Brush.linearGradient(highlight.gradient))
-                            .border(2.dp, cardColor, CircleShape)
-                            .clickable { },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(highlight.emoji, fontSize = 28.sp)
-                    }
+                    Box(modifier = Modifier.size(68.dp).clip(CircleShape).background(Brush.linearGradient(highlight.gradient)).border(2.dp, cardColor, CircleShape).clickable { }, contentAlignment = Alignment.Center) { Text(highlight.emoji, fontSize = 28.sp) }
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(highlight.label, fontSize = 12.sp, color = subTextColor, textAlign = TextAlign.Center)
                 }
