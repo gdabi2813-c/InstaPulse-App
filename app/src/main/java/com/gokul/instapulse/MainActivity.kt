@@ -31,13 +31,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayCircle
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -111,6 +109,8 @@ fun InstaPulseApp() {
     var isDarkMode by remember { mutableStateOf(false) }
     var showSplash by remember { mutableStateOf(true) }
     var splashAlpha by remember { mutableStateOf(1f) }
+    var showOnboarding by remember { mutableStateOf(true) }
+    var onboardingPage by remember { mutableIntStateOf(0) }
     var notifEnabled by remember { mutableStateOf(true) }
     var analyticsEnabled by remember { mutableStateOf(true) }
     var autoRefresh by remember { mutableStateOf(false) }
@@ -170,42 +170,47 @@ fun InstaPulseApp() {
 
     Box(modifier = Modifier.fillMaxSize().background(bgColor)) {
 
-        MaterialTheme(colorScheme = colorScheme) {
+        if (showOnboarding && !showSplash) {
+            OnboardingScreen(onboardingPage, { onboardingPage++ }, { showOnboarding = false })
+        } else if (!showSplash) {
 
-            Scaffold(
-                containerColor = bgColor,
-                bottomBar = {
-                    NavigationBar(containerColor = if (isDarkMode) DarkCard else Color.White) {
-                        NavigationBarItem(selected = selectedTab == 0, onClick = { selectedTab = 0 }, icon = { Icon(Icons.Default.Home, "Home", modifier = Modifier.size(24.dp)) }, label = { Text("Home") })
-                        NavigationBarItem(selected = selectedTab == 1, onClick = { selectedTab = 1 }, icon = { Icon(Icons.Default.PlayCircle, "Reels", modifier = Modifier.size(24.dp)) }, label = { Text("Reels") })
-                        NavigationBarItem(selected = selectedTab == 2, onClick = { selectedTab = 2 }, icon = { Icon(Icons.Default.Notifications, "Alerts", modifier = Modifier.size(24.dp)) }, label = { Text("Alerts") })
-                        NavigationBarItem(selected = selectedTab == 3, onClick = { selectedTab = 3 }, icon = { Icon(Icons.Default.Person, "Profile", modifier = Modifier.size(24.dp)) }, label = { Text("Profile") })
-                    }
-                }
-            ) { paddingValues ->
+            MaterialTheme(colorScheme = colorScheme) {
 
-                Column(modifier = Modifier.fillMaxSize().background(bgColor).padding(paddingValues)) {
-
-                    Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp), horizontalArrangement = Arrangement.End) {
-                        IconButton(onClick = { isDarkMode = !isDarkMode }) {
-                            Icon(if (isDarkMode) Icons.Default.LightMode else Icons.Default.DarkMode, "Toggle", modifier = Modifier.size(26.dp), tint = if (isDarkMode) Color(0xFFFFD54F) else Color(0xFF7B2FF7))
+                Scaffold(
+                    containerColor = bgColor,
+                    bottomBar = {
+                        NavigationBar(containerColor = if (isDarkMode) DarkCard else Color.White) {
+                            NavigationBarItem(selected = selectedTab == 0, onClick = { selectedTab = 0 }, icon = { Icon(Icons.Default.Home, "Home", modifier = Modifier.size(24.dp)) }, label = { Text("Home") })
+                            NavigationBarItem(selected = selectedTab == 1, onClick = { selectedTab = 1 }, icon = { Icon(Icons.Default.PlayCircle, "Reels", modifier = Modifier.size(24.dp)) }, label = { Text("Reels") })
+                            NavigationBarItem(selected = selectedTab == 2, onClick = { selectedTab = 2 }, icon = { Icon(Icons.Default.Notifications, "Alerts", modifier = Modifier.size(24.dp)) }, label = { Text("Alerts") })
+                            NavigationBarItem(selected = selectedTab == 3, onClick = { selectedTab = 3 }, icon = { Icon(Icons.Default.Person, "Profile", modifier = Modifier.size(24.dp)) }, label = { Text("Profile") })
                         }
                     }
+                ) { paddingValues ->
 
-                    when (selectedTab) {
-                        0 -> HomeScreen(bgColor, cardColor, textColor, subTextColor, insightCardColor)
-                        1 -> ReelsScreen(bgColor, cardColor, textColor, subTextColor, reels) { showAddDialog = true }
-                        2 -> NotificationsScreen(bgColor, cardColor, textColor, subTextColor, notifications)
-                        3 -> ProfileScreen(bgColor, cardColor, textColor, subTextColor, isDarkMode, notifEnabled, analyticsEnabled, autoRefresh, highlights) { toggleId ->
-                            when (toggleId) { 0 -> isDarkMode = !isDarkMode; 1 -> notifEnabled = !notifEnabled; 2 -> analyticsEnabled = !analyticsEnabled; 3 -> autoRefresh = !autoRefresh }
+                    Column(modifier = Modifier.fillMaxSize().background(bgColor).padding(paddingValues)) {
+
+                        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp), horizontalArrangement = Arrangement.End) {
+                            IconButton(onClick = { isDarkMode = !isDarkMode }) {
+                                Icon(if (isDarkMode) Icons.Default.LightMode else Icons.Default.DarkMode, "Toggle", modifier = Modifier.size(26.dp), tint = if (isDarkMode) Color(0xFFFFD54F) else Color(0xFF7B2FF7))
+                            }
+                        }
+
+                        when (selectedTab) {
+                            0 -> HomeScreen(bgColor, cardColor, textColor, subTextColor, insightCardColor)
+                            1 -> ReelsScreen(bgColor, cardColor, textColor, subTextColor, reels) { showAddDialog = true }
+                            2 -> NotificationsScreen(bgColor, cardColor, textColor, subTextColor, notifications)
+                            3 -> ProfileScreen(bgColor, cardColor, textColor, subTextColor, isDarkMode, notifEnabled, analyticsEnabled, autoRefresh, highlights) { toggleId ->
+                                when (toggleId) { 0 -> isDarkMode = !isDarkMode; 1 -> notifEnabled = !notifEnabled; 2 -> analyticsEnabled = !analyticsEnabled; 3 -> autoRefresh = !autoRefresh }
+                            }
                         }
                     }
                 }
             }
-        }
 
-        if (showAddDialog) {
-            AddReelDialog(cardColor, textColor, subTextColor, { showAddDialog = false }, { title, views, engagement -> reels.add(0, Reel(title, views, engagement)); showAddDialog = false })
+            if (showAddDialog) {
+                AddReelDialog(cardColor, textColor, subTextColor, { showAddDialog = false }, { title, views, engagement -> reels.add(0, Reel(title, views, engagement)); showAddDialog = false })
+            }
         }
 
         if (showSplash) {
@@ -221,6 +226,73 @@ fun InstaPulseApp() {
         }
     }
 }
+
+@Composable
+fun OnboardingScreen(page: Int, onNext: () -> Unit, onFinish: () -> Unit) {
+    val pages = listOf(
+        OnboardingData("📊", "Track Your Growth", "Monitor followers, reach, and engagement in real-time", listOf(Color(0xFF7B2FF7), Color(0xFFE1306C))),
+        OnboardingData("📱", "Manage Your Reels", "Add, search, and organize all your reels in one place", listOf(Color(0xFF2196F3), Color(0xFF00BCD4))),
+        OnboardingData("🔔", "Stay Updated", "Get instant notifications for milestones and trends", listOf(Color(0xFFFF9800), Color(0xFFFF5722)))
+    )
+
+    val current = pages[page]
+    val pageAlpha by animateFloatAsState(targetValue = 1f, animationSpec = tween(400), label = "page")
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Brush.verticalGradient(current.gradient))
+            .padding(30.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(current.emoji, fontSize = 100.sp)
+        Spacer(modifier = Modifier.height(40.dp))
+        Text(current.title, fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Color.White, textAlign = TextAlign.Center)
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(current.subtitle, fontSize = 16.sp, color = Color.White.copy(alpha = 0.85f), textAlign = TextAlign.Center)
+        Spacer(modifier = Modifier.height(60.dp))
+
+        // Page indicators
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            repeat(3) { index ->
+                Box(
+                    modifier = Modifier
+                        .size(if (index == page) 28.dp else 10.dp, 10.dp)
+                        .clip(RoundedCornerShape(5.dp))
+                        .background(if (index == page) Color.White else Color.White.copy(alpha = 0.4f))
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(50.dp))
+
+        Button(
+            onClick = { if (page < 2) onNext() else onFinish() },
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(containerColor = Color.White),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Text(
+                if (page < 2) "Next" else "Get Started",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = current.gradient[0],
+                modifier = Modifier.padding(vertical = 6.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        if (page < 2) {
+            TextButton(onClick = { onFinish() }) {
+                Text("Skip", color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp)
+            }
+        }
+    }
+}
+
+data class OnboardingData(val emoji: String, val title: String, val subtitle: String, val gradient: List<Color>)
 
 @Composable
 fun AddReelDialog(cardColor: Color, textColor: Color, subTextColor: Color, onDismiss: () -> Unit, onAdd: (String, String, String) -> Unit) {
@@ -333,7 +405,6 @@ fun ExpandableStatCard(title: String, value: String, growth: String, isExpanded:
 @Composable
 fun ReelsScreen(bgColor: Color, cardColor: Color, textColor: Color, subTextColor: Color, reels: MutableList<Reel>, onAddClick: () -> Unit) {
     var searchQuery by remember { mutableStateOf("") }
-
     val filteredReels = if (searchQuery.isBlank()) reels else reels.filter { it.title.contains(searchQuery, ignoreCase = true) }
 
     Column(modifier = Modifier.fillMaxSize().background(bgColor).verticalScroll(rememberScrollState()).padding(20.dp)) {
@@ -343,38 +414,17 @@ fun ReelsScreen(bgColor: Color, cardColor: Color, textColor: Color, subTextColor
         }
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 🔍 Search Bar
         TextField(
-            value = searchQuery,
-            onValueChange = { searchQuery = it },
+            value = searchQuery, onValueChange = { searchQuery = it },
             modifier = Modifier.fillMaxWidth(),
             placeholder = { Text("🔍 Search reels...", fontSize = 14.sp, color = subTextColor) },
-            singleLine = true,
-            shape = RoundedCornerShape(16.dp),
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = cardColor,
-                unfocusedContainerColor = cardColor,
-                focusedIndicatorColor = Color(0xFF7B2FF7),
-                unfocusedIndicatorColor = Color.Transparent,
-                cursorColor = Color(0xFF7B2FF7),
-                focusedTextColor = textColor,
-                unfocusedTextColor = textColor
-            ),
-            trailingIcon = {
-                if (searchQuery.isNotBlank()) {
-                    IconButton(onClick = { searchQuery = "" }) {
-                        Icon(Icons.Default.Clear, contentDescription = "Clear", tint = subTextColor, modifier = Modifier.size(20.dp))
-                    }
-                }
-            }
+            singleLine = true, shape = RoundedCornerShape(16.dp),
+            colors = TextFieldDefaults.colors(focusedContainerColor = cardColor, unfocusedContainerColor = cardColor, focusedIndicatorColor = Color(0xFF7B2FF7), unfocusedIndicatorColor = Color.Transparent, cursorColor = Color(0xFF7B2FF7), focusedTextColor = textColor, unfocusedTextColor = textColor),
+            trailingIcon = { if (searchQuery.isNotBlank()) { IconButton(onClick = { searchQuery = "" }) { Icon(Icons.Default.Clear, contentDescription = "Clear", tint = subTextColor, modifier = Modifier.size(20.dp)) } } }
         )
 
         Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            if (searchQuery.isBlank()) "💡 Swipe left on any reel to delete"
-            else "🔎 ${filteredReels.size} reel${if (filteredReels.size != 1) "s" else ""} found",
-            fontSize = 12.sp, color = subTextColor
-        )
+        Text(if (searchQuery.isBlank()) "💡 Swipe left on any reel to delete" else "🔎 ${filteredReels.size} reel${if (filteredReels.size != 1) "s" else ""} found", fontSize = 12.sp, color = subTextColor)
         Spacer(modifier = Modifier.height(16.dp))
 
         if (filteredReels.isEmpty()) {
@@ -385,10 +435,7 @@ fun ReelsScreen(bgColor: Color, cardColor: Color, textColor: Color, subTextColor
             Spacer(modifier = Modifier.height(8.dp))
             Text("Try a different search", fontSize = 14.sp, color = subTextColor, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
         } else {
-            filteredReels.forEach { reel ->
-                ReelCard(reel.title, reel.views, reel.engagement, cardColor, textColor, subTextColor)
-                Spacer(modifier = Modifier.height(12.dp))
-            }
+            filteredReels.forEach { reel -> ReelCard(reel.title, reel.views, reel.engagement, cardColor, textColor, subTextColor); Spacer(modifier = Modifier.height(12.dp)) }
         }
     }
 }
@@ -433,12 +480,10 @@ fun NotificationCard(notification: NotificationItem, cardColor: Color, textColor
 fun ProfileScreen(bgColor: Color, cardColor: Color, textColor: Color, subTextColor: Color, isDarkMode: Boolean, notifEnabled: Boolean, analyticsEnabled: Boolean, autoRefresh: Boolean, highlights: List<StoryHighlight>, onToggle: (Int) -> Unit) {
     Column(modifier = Modifier.fillMaxSize().background(bgColor).verticalScroll(rememberScrollState()).padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Spacer(modifier = Modifier.height(20.dp))
-
         Box(modifier = Modifier.size(96.dp), contentAlignment = Alignment.Center) {
             Box(modifier = Modifier.size(96.dp).clip(CircleShape).background(Brush.linearGradient(listOf(Color(0xFF7B2FF7), Color(0xFFE1306C), Color(0xFFFF9800)))))
             Box(modifier = Modifier.size(88.dp).clip(CircleShape).background(cardColor), contentAlignment = Alignment.Center) { Text("👤", fontSize = 48.sp) }
         }
-
         Spacer(modifier = Modifier.height(10.dp))
         Text("@gokul_creator", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = textColor)
         Spacer(modifier = Modifier.height(5.dp))
