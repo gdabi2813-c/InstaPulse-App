@@ -8,6 +8,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -26,12 +28,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayCircle
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -64,6 +66,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -173,7 +176,9 @@ fun InstaPulseApp() {
                         0 -> HomeScreen(bgColor, cardColor, textColor, subTextColor, insightCardColor)
                         1 -> ReelsScreen(bgColor, cardColor, textColor, subTextColor, reels) { showAddDialog = true }
                         2 -> NotificationsScreen(bgColor, cardColor, textColor, subTextColor, notifications)
-                        3 -> ProfileScreen(bgColor, cardColor, textColor, subTextColor, isDarkMode, notifEnabled, analyticsEnabled, autoRefresh) { isDarkMode = !isDarkMode; notifEnabled = !notifEnabled; analyticsEnabled = !analyticsEnabled; autoRefresh = !autoRefresh }
+                        3 -> ProfileScreen(bgColor, cardColor, textColor, subTextColor, isDarkMode, notifEnabled, analyticsEnabled, autoRefresh) { toggleId ->
+                            when (toggleId) { 0 -> isDarkMode = !isDarkMode; 1 -> notifEnabled = !notifEnabled; 2 -> analyticsEnabled = !analyticsEnabled; 3 -> autoRefresh = !autoRefresh }
+                        }
                     }
                 }
             }
@@ -306,21 +311,76 @@ fun ExpandableStatCard(title: String, value: String, growth: String, isExpanded:
 }
 
 @Composable
-fun ReelsScreen(bgColor: Color, cardColor: Color, textColor: Color, subTextColor: Color, reels: List<Reel>, onAddClick: () -> Unit) {
+fun ReelsScreen(bgColor: Color, cardColor: Color, textColor: Color, subTextColor: Color, reels: MutableList<Reel>, onAddClick: () -> Unit) {
     Column(modifier = Modifier.fillMaxSize().background(bgColor).verticalScroll(rememberScrollState()).padding(20.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Text("📱 Your Reels", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = textColor)
             Button(onClick = { onAddClick() }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7B2FF7)), shape = RoundedCornerShape(12.dp)) { Icon(Icons.Default.Add, contentDescription = "Add", modifier = Modifier.size(20.dp), tint = Color.White); Spacer(modifier = Modifier.size(4.dp)); Text("Add Reel", color = Color.White) }
         }
-        Spacer(modifier = Modifier.height(20.dp))
-        reels.forEach { reel -> ReelCard(reel.title, reel.views, reel.engagement, cardColor, textColor, subTextColor); Spacer(modifier = Modifier.height(12.dp)) }
+        Spacer(modifier = Modifier.height(8.dp))
+        Text("💡 Swipe left on any reel to delete", fontSize = 12.sp, color = subTextColor)
+        Spacer(modifier = Modifier.height(16.dp))
+        reels.forEachIndexed { index, reel ->
+            SwipeableReelCard(reel, cardColor, textColor, subTextColor) { reels.removeAt(index) }
+            Spacer(modifier = Modifier.height(12.dp))
+        }
     }
 }
 
 @Composable
-fun ReelCard(title: String, views: String, engagement: String, cardColor: Color, textColor: Color, subTextColor: Color) {
-    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = cardColor)) {
-        Column(modifier = Modifier.padding(18.dp)) { Text(title, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = textColor); Spacer(modifier = Modifier.height(5.dp)); Text(views, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7B2FF7)); Spacer(modifier = Modifier.height(5.dp)); Text(engagement, fontSize = 14.sp, color = subTextColor) }
+fun SwipeableReelCard(reel: Reel, cardColor: Color, textColor: Color, subTextColor: Color, onDelete: () -> Unit) {
+    var offsetX by remember { mutableStateOf(0f) }
+    var isDeleted by remember { mutableStateOf(false) }
+
+    if (!isDeleted) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .pointerInput(Unit) {
+                    detectHorizontalDragGestures(
+                        onDragEnd = {
+                            if (offsetX < -300f) {
+                                isDeleted = true
+                                onDelete()
+                            }
+                            offsetX = 0f
+                        }
+                    ) { _, dragAmount ->
+                        if (dragAmount < 0) offsetX += dragAmount
+                    }
+                }
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Color(0xFFE1306C))
+                    .padding(horizontal = 20.dp),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color.White, modifier = Modifier.size(24.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Delete", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .offset(x = offsetX.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = cardColor)
+            ) {
+                Column(modifier = Modifier.padding(18.dp)) {
+                    Text(reel.title, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = textColor)
+                    Spacer(modifier = Modifier.height(5.dp))
+                    Text(reel.views, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7B2FF7))
+                    Spacer(modifier = Modifier.height(5.dp))
+                    Text(reel.engagement, fontSize = 14.sp, color = subTextColor)
+                }
+            }
+        }
     }
 }
 
@@ -403,15 +463,9 @@ fun ProfileScreen(bgColor: Color, cardColor: Color, textColor: Color, subTextCol
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Button(
-            onClick = { },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE1306C)),
-            shape = RoundedCornerShape(12.dp)
-        ) {
+        Button(onClick = { }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE1306C)), shape = RoundedCornerShape(12.dp)) {
             Text("🚪 Logout", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 4.dp))
         }
-
         Spacer(modifier = Modifier.height(20.dp))
     }
 }
@@ -422,20 +476,11 @@ fun SettingRow(icon: String, title: String, subtitle: String, checked: Boolean, 
         Text(icon, fontSize = 24.sp)
         Spacer(modifier = Modifier.width(14.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(title, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.Black.copy(alpha = if (checked) 1f else 0.7f))
+            Text(title, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = if (checked) Color.Black else Color.Gray)
             Spacer(modifier = Modifier.height(2.dp))
             Text(subtitle, fontSize = 12.sp, color = Color.Gray)
         }
-        Switch(
-            checked = checked,
-            onCheckedChange = { onToggle() },
-            colors = SwitchDefaults.colors(
-                checkedThumbColor = Color.White,
-                checkedTrackColor = Color(0xFF7B2FF7),
-                uncheckedThumbColor = Color.Gray,
-                uncheckedTrackColor = Color.Gray.copy(alpha = 0.3f)
-            )
-        )
+        Switch(checked = checked, onCheckedChange = { onToggle() }, colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = Color(0xFF7B2FF7), uncheckedThumbColor = Color.Gray, uncheckedTrackColor = Color.Gray.copy(alpha = 0.3f)))
     }
 }
 
