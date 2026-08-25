@@ -958,6 +958,8 @@ fun ProfileScreen(
         }
 
         Spacer(modifier = Modifier.height(22.dp))
+        AchievementsSection(cardColor, textColor, subTextColor)
+        Spacer(modifier = Modifier.height(22.dp))
         Text("✨ Highlights", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = textColor)
         Spacer(modifier = Modifier.height(14.dp))
 
@@ -1059,6 +1061,50 @@ fun StatCard(title: String, value: String, growth: String, cardColor: Color, tex
             Spacer(modifier = Modifier.height(5.dp))
             Text(value, fontSize = 27.sp, fontWeight = FontWeight.Bold, color = textColor)
             Text("↑ $growth", fontSize = 13.sp, color = Color(0xFF16A34A))
+        }
+    }
+}
+
+@Composable
+fun AchievementsSection(cardColor: Color, textColor: Color, subTextColor: Color) {
+    val achievements = listOf(
+        Triple("🏆", "Top Creator", "Top 5% this week"),
+        Triple("🔥", "Viral Star", "1M+ views on a reel"),
+        Triple("📈", "Rising Star", "500+ followers in a month"),
+        Triple("⚡", "Consistent", "Posted 30 days straight"),
+        Triple("💎", "Highly Engaged", "8%+ engagement rate"),
+        Triple("🌟", "Trending", "3 reels trending")
+    )
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text("🏆 Achievements", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = textColor)
+        Spacer(modifier = Modifier.height(12.dp))
+
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            items(achievements.size) { index ->
+                val (emoji, title, desc) = achievements[index]
+                Card(
+                    modifier = Modifier.width(130.dp).clickable { },
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = cardColor)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Box(
+                            modifier = Modifier.size(48.dp).clip(CircleShape).background(Brush.linearGradient(listOf(Color(0xFF7B2FF7).copy(alpha = 0.15f), Color(0xFFE1306C).copy(alpha = 0.15f)))),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(emoji, fontSize = 24.sp)
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(title, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = textColor, textAlign = TextAlign.Center)
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(desc, fontSize = 10.sp, color = subTextColor, textAlign = TextAlign.Center)
+                    }
+                }
+            }
         }
     }
 }
