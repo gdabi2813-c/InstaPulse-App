@@ -719,7 +719,7 @@ fun HomeScreen(bgColor: Color, cardColor: Color, textColor: Color, subTextColor:
             Text("InstaPulse", fontSize = 30.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7B2FF7))
             Text("Your Instagram Growth Hub", fontSize = 14.sp, color = subTextColor)
             Spacer(modifier = Modifier.height(25.dp))
-            Text(if (isRefreshing) "Refreshing data..." else "Good Morning, Creator 👋", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = textColor)
+            Text(if (isRefreshing) "Refreshing data..." else "Jai Shree Ram 🚩", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = textColor)
             Spacer(modifier = Modifier.height(18.dp))
 
             GrowthScoreCard(cardColor, textColor, subTextColor, chartAnimationPlayed)
@@ -1050,6 +1050,10 @@ fun ProfileScreen(
             Column(horizontalAlignment = Alignment.CenterHorizontally) { Text("892", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = textColor); Text("Following", fontSize = 13.sp, color = subTextColor) }
             Column(horizontalAlignment = Alignment.CenterHorizontally) { Text("247", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = textColor); Text("Posts", fontSize = 13.sp, color = subTextColor) }
         }
+
+        Spacer(modifier = Modifier.height(18.dp))
+
+        StreakCounterCard(cardColor, textColor, subTextColor)
 
         Spacer(modifier = Modifier.height(22.dp))
         AchievementsSection(cardColor, textColor, subTextColor)
@@ -1613,6 +1617,79 @@ fun GrowthScoreCard(cardColor: Color, textColor: Color, subTextColor: Color, ani
 
             Spacer(modifier = Modifier.height(10.dp))
             Text("💡 Post consistently to reach 90+", fontSize = 12.sp, color = Color(0xFF7B2FF7), fontWeight = FontWeight.Medium)
+        }
+    }
+}
+
+@Composable
+fun StreakCounterCard(cardColor: Color, textColor: Color, subTextColor: Color) {
+    val streakDays = 28
+    val weekDays = listOf("M", "T", "W", "T", "F", "S", "S")
+    val activeDays = listOf(true, true, true, true, true, false, false)
+
+    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = cardColor)) {
+        Column(modifier = Modifier.padding(18.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("🔥", fontSize = 28.sp)
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Text("Posting Streak", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = textColor)
+                        Text("Keep posting daily!", fontSize = 12.sp, color = subTextColor)
+                    }
+                }
+                Box(
+                    modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(Brush.horizontalGradient(listOf(Color(0xFFFF6B35), Color(0xFFFF9800)))).padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    Text("$streakDays days", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Week dots
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                weekDays.forEachIndexed { index, day ->
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        val isActive = activeDays[index]
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(if (isActive) Brush.horizontalGradient(listOf(Color(0xFFFF6B35), Color(0xFFFF9800))) else Brush.horizontalGradient(listOf(subTextColor.copy(alpha = 0.15f), subTextColor.copy(alpha = 0.15f))))
+                                .border(2.dp, if (isActive) Color(0xFFFF6B35) else subTextColor.copy(alpha = 0.3f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(if (isActive) "🔥" else "💤", fontSize = 14.sp)
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(day, fontSize = 11.sp, color = subTextColor)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Milestone progress
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text("Next milestone: ", fontSize = 12.sp, color = subTextColor)
+                Text("30 days", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFF6B35))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("(${streakDays}/30)", fontSize = 11.sp, color = subTextColor)
+            }
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Box(modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)).background(subTextColor.copy(alpha = 0.15f))) {
+                Box(modifier = Modifier.fillMaxWidth(streakDays / 30f).height(8.dp).clip(RoundedCornerShape(4.dp)).background(Brush.horizontalGradient(listOf(Color(0xFFFF6B35), Color(0xFFFF9800)))))
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+            Text("💪 Just 2 more days to hit 30-day streak!", fontSize = 12.sp, color = Color(0xFFFF6B35), fontWeight = FontWeight.Medium)
         }
     }
 }
