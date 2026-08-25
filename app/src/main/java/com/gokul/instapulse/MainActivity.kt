@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -71,8 +72,12 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -731,6 +736,10 @@ fun HomeScreen(bgColor: Color, cardColor: Color, textColor: Color, subTextColor:
             }
 
             Spacer(modifier = Modifier.height(22.dp))
+            Text("📈 Reach Growth Trend", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = textColor)
+            Spacer(modifier = Modifier.height(12.dp))
+            ReachLineChart(cardColor, textColor, subTextColor, chartAnimationPlayed)
+            Spacer(modifier = Modifier.height(22.dp))
             Text("🤖 AI Growth Insight", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = textColor)
             Spacer(modifier = Modifier.height(10.dp))
             Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = insightCardColor)) {
@@ -1104,6 +1113,100 @@ fun AchievementsSection(cardColor: Color, textColor: Color, subTextColor: Color)
                         Text(desc, fontSize = 10.sp, color = subTextColor, textAlign = TextAlign.Center)
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun ReachLineChart(cardColor: Color, textColor: Color, subTextColor: Color, animationPlayed: Boolean) {
+    val reachData = listOf(120f, 180f, 150f, 220f, 280f, 250f, 310f, 340f)
+    val weekLabels = listOf("W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8")
+
+    val animationProgress by animateFloatAsState(
+        targetValue = if (animationPlayed) 1f else 0f,
+        animationSpec = tween(durationMillis = 1200),
+        label = "lineChart"
+    )
+
+    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = cardColor)) {
+        Column(modifier = Modifier.padding(18.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("Reach (8 weeks)", fontSize = 14.sp, color = subTextColor)
+                Text("340K", fontSize = 14.sp, color = Color(0xFF7B2FF7), fontWeight = FontWeight.Bold)
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Canvas(modifier = Modifier.fillMaxWidth().height(160.dp)) {
+                val canvasWidth = size.width
+                val canvasHeight = size.height
+                val maxValue = reachData.maxOrNull() ?: 1f
+
+                val points = reachData.mapIndexed { index, value ->
+                    val x = (canvasWidth / (reachData.size - 1)) * index
+                    val y = canvasHeight - (value / maxValue) * (canvasHeight - 20f) - 10f
+                    Pair(x, y)
+                }
+
+                val animatedPointCount = (points.size * animationProgress).toInt().coerceIn(1, points.size)
+
+                // Draw filled gradient area
+                if (animatedPointCount > 1) {
+                    val areaPath = Path().apply {
+                        moveTo(points[0].first, canvasHeight)
+                        for (i in 0 until animatedPointCount) {
+                            lineTo(points[i].first, points[i].second)
+                        }
+                        lineTo(points[animatedPointCount - 1].first, canvasHeight)
+                        close()
+                    }
+                    drawPath(
+                        path = areaPath,
+                        brush = Brush.verticalGradient(
+                            colors = listOf(Color(0xFF7B2FF7).copy(alpha = 0.3f), Color(0xFF7B2FF7).copy(alpha = 0.0f))
+                        )
+                    )
+                }
+
+                // Draw line
+                if (animatedPointCount > 1) {
+                    val linePath = Path().apply {
+                        moveTo(points[0].first, points[0].second)
+                        for (i in 1 until animatedPointCount) {
+                            lineTo(points[i].first, points[i].second)
+                        }
+                    }
+                    drawPath(
+                        path = linePath,
+                        color = Color(0xFF7B2FF7),
+                        style = Stroke(width = 4f, cap = StrokeCap.Round)
+                    )
+                }
+
+                // Draw dots
+                for (i in 0 until animatedPointCount) {
+                    drawCircle(
+                        color = Color.White,
+                        radius = 6f,
+                        center = Offset(points[i].first, points[i].second)
+                    )
+                    drawCircle(
+                        color = Color(0xFF7B2FF7),
+                        radius = 4f,
+                        center = Offset(points[i].first, points[i].second)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                weekLabels.forEach { week ->
+                    Text(week, fontSize = 10.sp, color = subTextColor)
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                Text("📈 +183% reach growth in 8 weeks!", fontSize = 13.sp, color = Color(0xFF16A34A), fontWeight = FontWeight.Medium)
             }
         }
     }
