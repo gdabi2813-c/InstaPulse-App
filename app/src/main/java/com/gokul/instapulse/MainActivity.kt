@@ -1010,6 +1010,8 @@ fun ProfileScreen(
         Spacer(modifier = Modifier.height(22.dp))
         AchievementsSection(cardColor, textColor, subTextColor)
         Spacer(modifier = Modifier.height(22.dp))
+        ContentCalendarSection(cardColor, textColor, subTextColor)
+        Spacer(modifier = Modifier.height(22.dp))
         Text("✨ Highlights", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = textColor)
         Spacer(modifier = Modifier.height(14.dp))
 
@@ -1331,5 +1333,78 @@ fun ReachPieChart(cardColor: Color, textColor: Color, subTextColor: Color, anima
                 Text("🏠 Home is your top reach source — 50%", fontSize = 12.sp, color = subTextColor)
             }
         }
+    }
+}
+
+@Composable
+fun ContentCalendarSection(cardColor: Color, textColor: Color, subTextColor: Color) {
+    val weekDays = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+    val scheduledPosts = listOf(
+        Triple("Mon", "Reel: Morning Routine", "9:00 AM"),
+        Triple("Tue", "Post: Motivation Quote", "1:00 PM"),
+        Triple("Thu", "Reel: Fitness Tips", "7:00 PM"),
+        Triple("Fri", "Reel: Success Story", "8:00 PM"),
+        Triple("Sat", "Post: Behind Scenes", "5:00 PM")
+    )
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text("📅 Content Calendar", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = textColor)
+        Spacer(modifier = Modifier.height(8.dp))
+        Text("This week's posting schedule", fontSize = 13.sp, color = subTextColor)
+        Spacer(modifier = Modifier.height(14.dp))
+
+        // Week strip
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            weekDays.forEach { day ->
+                val hasPost = scheduledPosts.any { it.first == day }
+                Column(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(if (hasPost) Color(0xFF7B2FF7).copy(alpha = 0.1f) else cardColor)
+                        .padding(horizontal = 10.dp, vertical = 8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(day, fontSize = 11.sp, color = subTextColor)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Box(
+                        modifier = Modifier.size(8.dp).clip(CircleShape).background(if (hasPost) Color(0xFF7B2FF7) else subTextColor.copy(alpha = 0.3f))
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Scheduled posts list
+        scheduledPosts.forEach { (day, title, time) ->
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = cardColor)
+            ) {
+                Row(
+                    modifier = Modifier.padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFF7B2FF7).copy(alpha = 0.1f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("📅", fontSize = 20.sp)
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(title, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = textColor)
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text("$day • $time", fontSize = 12.sp, color = subTextColor)
+                    }
+                    Text("🔔", fontSize = 18.sp)
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
+        Text("💡 Tip: Best posting time is 7 PM - 10 PM", fontSize = 12.sp, color = Color(0xFF7B2FF7), fontWeight = FontWeight.Medium)
     }
 }
