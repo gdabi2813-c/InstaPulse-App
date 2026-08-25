@@ -342,6 +342,32 @@ fun OnboardingScreen(page: Int, onNext: () -> Unit, onFinish: () -> Unit) {
             TextButton(onClick = { onFinish() }) {
                 Text("Skip", color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp)
             }
+        } else {
+            Spacer(modifier = Modifier.height(8.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Brush.horizontalGradient(listOf(Color(0xFF833AB4), Color(0xFFE1306C), Color(0xFFFCAF45))))
+                    .clickable { onFinish() }
+                    .padding(vertical = 14.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("📸", fontSize = 20.sp)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        "Connect with Instagram",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(10.dp))
+            TextButton(onClick = { onFinish() }) {
+                Text("Skip for now", color = Color.White.copy(alpha = 0.6f), fontSize = 13.sp)
+            }
         }
     }
 }
