@@ -78,6 +78,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -655,20 +656,6 @@ fun HomeScreen(bgColor: Color, cardColor: Color, textColor: Color, subTextColor:
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .pointerInput(Unit) {
-                    detectVerticalDragGestures(
-                        onDragEnd = {
-                            if (pullDistance > 200f && !isRefreshing) {
-                                isRefreshing = true
-                                refreshTriggered = true
-                            }
-                            pullDistance = 0f
-                        }
-                    ) { _, dragAmount ->
-                        if (dragAmount > 0 && !isRefreshing) pullDistance = (pullDistance + dragAmount).coerceAtMost(300f)
-                    }
-                }
-                .offset(y = if (isRefreshing) 80.dp else pullDistance.dp / 2)
                 .padding(20.dp)
         ) {
             if (pullDistance > 50f || isRefreshing) {
@@ -745,6 +732,11 @@ fun HomeScreen(bgColor: Color, cardColor: Color, textColor: Color, subTextColor:
             Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = insightCardColor)) {
                 Text("Your motivational Reels are performing well. Try creating more content around your best-performing topics.", modifier = Modifier.padding(18.dp), fontSize = 15.sp, color = textColor)
             }
+
+            Spacer(modifier = Modifier.height(22.dp))
+            Text("📊 Reach Breakdown", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = textColor)
+            Spacer(modifier = Modifier.height(12.dp))
+            ReachPieChart(cardColor, textColor, subTextColor, chartAnimationPlayed)
 
             Spacer(modifier = Modifier.height(22.dp))
             Text("🔥 Best Reel", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = textColor)
@@ -1256,6 +1248,87 @@ fun ReachLineChart(cardColor: Color, textColor: Color, subTextColor: Color, anim
             Spacer(modifier = Modifier.height(8.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                 Text("📈 +183% reach growth in 8 weeks!", fontSize = 13.sp, color = Color(0xFF16A34A), fontWeight = FontWeight.Medium)
+            }
+        }
+    }
+}
+
+@Composable
+fun ReachPieChart(cardColor: Color, textColor: Color, subTextColor: Color, animationPlayed: Boolean) {
+    val slices = listOf(
+        Triple("Home", 50f, Color(0xFF7B2FF7)),
+        Triple("Explore", 31f, Color(0xFFE1306C)),
+        Triple("Hashtags", 13f, Color(0xFFFF9800)),
+        Triple("Profile", 6f, Color(0xFF2196F3))
+    )
+
+    val animationProgress by animateFloatAsState(
+        targetValue = if (animationPlayed) 1f else 0f,
+        animationSpec = tween(durationMillis = 1200),
+        label = "pieChart"
+    )
+
+    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = cardColor)) {
+        Column(modifier = Modifier.padding(18.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Pie chart canvas
+                Canvas(modifier = Modifier.size(130.dp)) {
+                    val canvasSize = size.minDimension
+                    val center = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height / 2f)
+                    val radius = canvasSize / 2f
+                    var startAngle = -90f
+
+                    slices.forEach { slice ->
+                        val label = slice.first
+                        val percentage = slice.second
+                        val color = slice.third
+                        val sweepAngle = (percentage / 100f) * 360f * animationProgress
+                        drawArc(
+                            color = color,
+                            startAngle = startAngle,
+                            sweepAngle = sweepAngle,
+                            useCenter = true,
+                            topLeft = androidx.compose.ui.geometry.Offset(center.x - radius, center.y - radius),
+                            size = androidx.compose.ui.geometry.Size(radius * 2, radius * 2)
+                        )
+                        startAngle += sweepAngle
+                    }
+
+                    // Center hole for donut effect
+                    drawCircle(
+                        color = cardColor,
+                        radius = radius * 0.55f,
+                        center = center
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(20.dp))
+
+                // Legend
+                Column(modifier = Modifier.weight(1f)) {
+                    slices.forEach { slice ->
+                        val label = slice.first
+                        val percentage = slice.second
+                        val color = slice.third
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(modifier = Modifier.size(14.dp).clip(RoundedCornerShape(3.dp)).background(color))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(label, fontSize = 13.sp, color = textColor, modifier = Modifier.weight(1f))
+                            Text("${percentage.toInt()}%", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = textColor)
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                Text("🏠 Home is your top reach source — 50%", fontSize = 12.sp, color = subTextColor)
             }
         }
     }
