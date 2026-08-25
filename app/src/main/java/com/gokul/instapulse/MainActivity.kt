@@ -878,14 +878,63 @@ fun ReelsScreen(bgColor: Color, cardColor: Color, textColor: Color, subTextColor
 
 @Composable
 fun NotificationsScreen(bgColor: Color, cardColor: Color, textColor: Color, subTextColor: Color, notifications: List<NotificationItem>) {
+    var selectedFilter by remember { mutableIntStateOf(0) }
+    val filters = listOf("All", "Mentions", "Likes")
+    val filterIcons = listOf("🔔", "💬", "❤️")
+
+    val filteredNotifications = when (selectedFilter) {
+        1 -> notifications.filter { it.icon == "💬" || it.icon == "🤝" }
+        2 -> notifications.filter { it.icon == "❤️" }
+        else -> notifications
+    }
+
     Column(modifier = Modifier.fillMaxSize().background(bgColor).verticalScroll(rememberScrollState()).padding(20.dp)) {
         Text("🔔 Notifications", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = textColor)
         Spacer(modifier = Modifier.height(5.dp))
         Text("Stay updated with your latest activity", fontSize = 14.sp, color = subTextColor)
-        Spacer(modifier = Modifier.height(20.dp))
-        notifications.forEach { notification ->
-            NotificationCard(notification, cardColor, textColor, subTextColor)
-            Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Filter tabs
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            filters.forEachIndexed { index, filter ->
+                Row(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(if (selectedFilter == index) Color(0xFF7B2FF7) else cardColor)
+                        .clickable { selectedFilter = index }
+                        .padding(vertical = 10.dp, horizontal = 8.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(filterIcons[index], fontSize = 14.sp)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        filter,
+                        fontSize = 13.sp,
+                        fontWeight = if (selectedFilter == index) FontWeight.Bold else FontWeight.Medium,
+                        color = if (selectedFilter == index) Color.White else subTextColor
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+        Text("${filteredNotifications.size} notification${if (filteredNotifications.size != 1) "s" else ""}", fontSize = 12.sp, color = subTextColor)
+        Spacer(modifier = Modifier.height(12.dp))
+
+        if (filteredNotifications.isEmpty()) {
+            Spacer(modifier = Modifier.height(40.dp))
+            Text(filterIcons[selectedFilter], fontSize = 56.sp, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+            Spacer(modifier = Modifier.height(12.dp))
+            Text("No ${filters[selectedFilter].lowercase()} yet", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = textColor, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+            Spacer(modifier = Modifier.height(6.dp))
+            Text("You'll see ${filters[selectedFilter].lowercase()} here when they arrive", fontSize = 13.sp, color = subTextColor, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+        } else {
+            filteredNotifications.forEach { notification ->
+                NotificationCard(notification, cardColor, textColor, subTextColor)
+                Spacer(modifier = Modifier.height(10.dp))
+            }
         }
     }
 }
