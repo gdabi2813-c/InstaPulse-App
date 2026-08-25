@@ -761,6 +761,11 @@ fun HomeScreen(bgColor: Color, cardColor: Color, textColor: Color, subTextColor:
                 }
             }
             Spacer(modifier = Modifier.height(20.dp))
+
+            Text("📊 This Week vs Last Week", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = textColor)
+            Spacer(modifier = Modifier.height(12.dp))
+            ComparisonChart(cardColor, textColor, subTextColor, chartAnimationPlayed)
+            Spacer(modifier = Modifier.height(20.dp))
         }
     }
 }
@@ -1416,5 +1421,75 @@ fun ContentCalendarSection(cardColor: Color, textColor: Color, subTextColor: Col
 
         Spacer(modifier = Modifier.height(4.dp))
         Text("💡 Tip: Best posting time is 7 PM - 10 PM", fontSize = 12.sp, color = Color(0xFF7B2FF7), fontWeight = FontWeight.Medium)
+    }
+}
+
+@Composable
+fun ComparisonChart(cardColor: Color, textColor: Color, subTextColor: Color, animationPlayed: Boolean) {
+    val metrics = listOf(
+        ComparisonData("Followers", 12.4f, 11.8f, "+5.1%"),
+        ComparisonData("Reach", 284f, 240f, "+18.3%"),
+        ComparisonData("Engagement", 7.8f, 6.9f, "+13.0%"),
+        ComparisonData("Profile Visits", 3.2f, 2.7f, "+18.5%")
+    )
+
+    val animationProgress by animateFloatAsState(
+        targetValue = if (animationPlayed) 1f else 0f,
+        animationSpec = tween(durationMillis = 1000),
+        label = "comparisonChart"
+    )
+
+    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = cardColor)) {
+        Column(modifier = Modifier.padding(18.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(modifier = Modifier.size(12.dp).clip(RoundedCornerShape(3.dp)).background(Color(0xFF7B2FF7)))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("This Week", fontSize = 11.sp, color = subTextColor)
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Box(modifier = Modifier.size(12.dp).clip(RoundedCornerShape(3.dp)).background(Color(0xFFAAAAAA).copy(alpha = 0.4f)))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Last Week", fontSize = 11.sp, color = subTextColor)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            metrics.forEach { metric ->
+                ComparisonBar(metric, animationProgress, textColor, subTextColor)
+                Spacer(modifier = Modifier.height(14.dp))
+            }
+        }
+    }
+}
+
+data class ComparisonData(val label: String, val thisWeek: Float, val lastWeek: Float, val change: String)
+
+@Composable
+fun ComparisonBar(metric: ComparisonData, progress: Float, textColor: Color, subTextColor: Color) {
+    val maxValue = maxOf(metric.thisWeek, metric.lastWeek)
+
+    Column {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(metric.label, fontSize = 13.sp, color = subTextColor)
+            Text(metric.change, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF16A34A))
+        }
+        Spacer(modifier = Modifier.height(6.dp))
+
+        // Last week bar
+        Box(modifier = Modifier.fillMaxWidth().height(10.dp).clip(RoundedCornerShape(5.dp)).background(subTextColor.copy(alpha = 0.15f))) {
+            Box(modifier = Modifier.fillMaxWidth((metric.lastWeek / maxValue) * progress).height(10.dp).clip(RoundedCornerShape(5.dp)).background(Color(0xFFAAAAAA).copy(alpha = 0.5f)))
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+
+        // This week bar
+        Box(modifier = Modifier.fillMaxWidth().height(10.dp).clip(RoundedCornerShape(5.dp)).background(subTextColor.copy(alpha = 0.15f))) {
+            Box(modifier = Modifier.fillMaxWidth((metric.thisWeek / maxValue) * progress).height(10.dp).clip(RoundedCornerShape(5.dp)).background(Color(0xFF7B2FF7)))
+        }
+        Spacer(modifier = Modifier.height(2.dp))
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text("${metric.thisWeek}K", fontSize = 11.sp, color = Color(0xFF7B2FF7), fontWeight = FontWeight.Bold)
+            Text("${metric.lastWeek}K", fontSize = 11.sp, color = subTextColor)
+        }
     }
 }
