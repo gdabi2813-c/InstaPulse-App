@@ -1,5 +1,6 @@
 package com.gokul.instapulse
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -80,6 +81,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -462,6 +464,7 @@ fun EditProfileScreen(
 
 @Composable
 fun ReelDetailScreen(reel: Reel, bgColor: Color, cardColor: Color, textColor: Color, subTextColor: Color, onBack: () -> Unit) {
+    val context = LocalContext.current
     Column(modifier = Modifier.fillMaxSize().background(bgColor).verticalScroll(rememberScrollState()).padding(20.dp)) {
 
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -547,7 +550,14 @@ fun ReelDetailScreen(reel: Reel, bgColor: Color, cardColor: Color, textColor: Co
         Spacer(modifier = Modifier.height(16.dp))
 
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Button(onClick = { }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7B2FF7)), shape = RoundedCornerShape(12.dp)) {
+            Button(onClick = {
+                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_SUBJECT, "Check out this reel on InstaPulse!")
+                    putExtra(Intent.EXTRA_TEXT, "🎬 ${reel.title}\n👀 ${reel.views}\n${reel.engagement}\n\nTracked via InstaPulse — Your Instagram Growth Hub")
+                }
+                context.startActivity(Intent.createChooser(shareIntent, "Share Reel"))
+            }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7B2FF7)), shape = RoundedCornerShape(12.dp)) {
                 Text("📤 Share", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
             }
             Button(onClick = { }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = cardColor), shape = RoundedCornerShape(12.dp)) {
