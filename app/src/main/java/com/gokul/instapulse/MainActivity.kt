@@ -722,6 +722,9 @@ fun HomeScreen(bgColor: Color, cardColor: Color, textColor: Color, subTextColor:
             Text(if (isRefreshing) "Refreshing data..." else "Good Morning, Creator 👋", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = textColor)
             Spacer(modifier = Modifier.height(18.dp))
 
+            GrowthScoreCard(cardColor, textColor, subTextColor, chartAnimationPlayed)
+            Spacer(modifier = Modifier.height(18.dp))
+
             ExpandableStatCard("Followers", "12.4K", "+324 this week", expandedCard == 0, { expandedCard = if (expandedCard == 0) -1 else 0 }, cardColor, textColor, subTextColor, listOf("This Week" to "+324", "This Month" to "+1.2K", "Non-Followers" to "8.1K", "Engaged Followers" to "4.3K"))
             Spacer(modifier = Modifier.height(12.dp))
             ExpandableStatCard("Reach", "284K", "+18% this week", expandedCard == 1, { expandedCard = if (expandedCard == 1) -1 else 1 }, cardColor, textColor, subTextColor, listOf("From Home" to "142K", "From Explore" to "89K", "From Hashtags" to "38K", "From Profile" to "15K"))
@@ -1516,6 +1519,100 @@ fun ComparisonBar(metric: ComparisonData, progress: Float, textColor: Color, sub
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text("${metric.thisWeek}K", fontSize = 11.sp, color = Color(0xFF7B2FF7), fontWeight = FontWeight.Bold)
             Text("${metric.lastWeek}K", fontSize = 11.sp, color = subTextColor)
+        }
+    }
+}
+
+@Composable
+fun GrowthScoreCard(cardColor: Color, textColor: Color, subTextColor: Color, animationPlayed: Boolean) {
+    val targetScore = 87f
+    val animatedScore by animateFloatAsState(
+        targetValue = if (animationPlayed) targetScore else 0f,
+        animationSpec = tween(durationMillis = 1500),
+        label = "growthScore"
+    )
+
+    val metrics = listOf(
+        Triple("Reach", 92, Color(0xFF7B2FF7)),
+        Triple("Engagement", 78, Color(0xFFE1306C)),
+        Triple("Consistency", 85, Color(0xFFFF9800)),
+        Triple("Growth", 88, Color(0xFF2196F3))
+    )
+
+    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = cardColor)) {
+        Column(modifier = Modifier.padding(18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("🎯 Growth Score", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = textColor)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text("Your overall account health", fontSize = 12.sp, color = subTextColor)
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Circular progress ring
+            Box(contentAlignment = Alignment.Center) {
+                Canvas(modifier = Modifier.size(140.dp)) {
+                    val center = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height / 2f)
+                    val radius = size.minDimension / 2f - 12f
+
+                    // Background circle
+                    drawCircle(
+                        color = subTextColor.copy(alpha = 0.1f),
+                        radius = radius,
+                        center = center,
+                        style = Stroke(width = 14f)
+                    )
+
+                    // Progress arc
+                    drawArc(
+                        color = Color(0xFF7B2FF7),
+                        startAngle = -90f,
+                        sweepAngle = (animatedScore / 100f) * 360f,
+                        useCenter = false,
+                        topLeft = androidx.compose.ui.geometry.Offset(center.x - radius, center.y - radius),
+                        size = androidx.compose.ui.geometry.Size(radius * 2, radius * 2),
+                        style = Stroke(width = 14f, cap = StrokeCap.Round)
+                    )
+                }
+
+                // Score text in center
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("${animatedScore.toInt()}", fontSize = 42.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7B2FF7))
+                    Text("/ 100", fontSize = 14.sp, color = subTextColor)
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text("Excellent! 🔥", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF16A34A))
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Breakdown metrics
+            metrics.forEach { metric ->
+                val (label, score, color) = metric
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(label, fontSize = 13.sp, color = subTextColor, modifier = Modifier.weight(1f))
+                    Box(
+                        modifier = Modifier
+                            .width(100.dp)
+                            .height(8.dp)
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(subTextColor.copy(alpha = 0.15f))
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth((score / 100f) * (animatedScore / targetScore))
+                                .height(8.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(color)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("$score", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = textColor, modifier = Modifier.width(28.dp))
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+            Text("💡 Post consistently to reach 90+", fontSize = 12.sp, color = Color(0xFF7B2FF7), fontWeight = FontWeight.Medium)
         }
     }
 }
